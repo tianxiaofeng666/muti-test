@@ -8,7 +8,7 @@ public class UserController {
 
     @RequestMapping("/getUser")
     public String getUser(){
-        return "用户不存在！";
+        return "用户不存在！@@@";
     }
 
     @RequestMapping("/addUser")
