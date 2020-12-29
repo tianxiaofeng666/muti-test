@@ -21,5 +21,10 @@ public class TestController {
         return "";
     }
 
+    @RequestMapping("/test333")
+    public String test333(){
+        return "";
+    }
+
 }
 
