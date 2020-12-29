@@ -10,5 +10,10 @@ public class TestController {
     public String test(){
         return "进来了。";
     }
+
+    @RequestMapping("/test111")
+    public String test111(){
+        return "";
+    }
 }
 
