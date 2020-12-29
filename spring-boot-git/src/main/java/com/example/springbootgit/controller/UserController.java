@@ -10,4 +10,9 @@ public class UserController {
     public String getUser(){
         return "用户不存在！";
     }
+
+    @RequestMapping("/addUser")
+    public String addUser(){
+        return "添加成功！";
+    }
 }
