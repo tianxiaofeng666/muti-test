@@ -19,4 +19,9 @@ public class UserController {
         String c = "cc";
         return "添加成功！";
     }
+
+    @RequestMapping("/deleteUser")
+    public String deleteUser(){
+        return "删除成功！";
+    }
 }
