@@ -14,6 +14,7 @@ public class UserController {
     @RequestMapping("/addUser")
     public String addUser(){
         String a = "aa";
+        String b = "bb";
         return "添加成功！";
     }
 }
