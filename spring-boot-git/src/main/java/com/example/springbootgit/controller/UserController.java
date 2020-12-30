@@ -16,6 +16,7 @@ public class UserController {
         String a = "aa";
         String b = "bb";
         String d = "dd";
+        String c = "cc";
         return "添加成功！";
     }
 }
