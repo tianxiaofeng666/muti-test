@@ -15,5 +15,16 @@ public class TestController {
     public String test111(){
         return "";
     }
+
+    @RequestMapping("/test222")
+    public String test222(){
+        return "";
+    }
+
+    @RequestMapping("/test333")
+    public String test333(){
+        return "";
+    }
+
 }
 

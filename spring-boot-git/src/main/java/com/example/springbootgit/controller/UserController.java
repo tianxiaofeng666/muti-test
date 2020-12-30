@@ -8,6 +8,15 @@ public class UserController {
 
     @RequestMapping("/getUser")
     public String getUser(){
-        return "用户不存在！";
+        return "用户不存在！!!!!!@@@";
+    }
+
+    @RequestMapping("/addUser")
+    public String addUser(){
+        String a = "aa";
+        String b = "bb";
+        String d = "dd";
+        String c = "cc";
+        return "添加成功！";
     }
 }
