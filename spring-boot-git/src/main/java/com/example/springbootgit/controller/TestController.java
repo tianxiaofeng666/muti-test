@@ -26,5 +26,10 @@ public class TestController {
         return "";
     }
 
+    @RequestMapping("/test444")
+    public String test444(){
+        return "";
+    }
+
 }
 
