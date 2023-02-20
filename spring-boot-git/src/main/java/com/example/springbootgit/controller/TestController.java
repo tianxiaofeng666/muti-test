@@ -8,6 +8,6 @@ public class TestController {
 
     @RequestMapping("/test")
     public String test(){
-        return "2.1本次需求开发";
+        return "2.1-dev-本次需求开发";
     }
 }
