@@ -14,17 +14,17 @@ public class UserController {
     @RequestMapping("/addUser")
     public String addUser(){
         /**
-         * 修改生产bug333333
+         * 修改生产bug333333-dev
          */
-        String a = "qaaazzdx";
-        String b = "ccc";
+        String a = "aa";
+        String b = "bb";
         String d = "dd";
         String c = "cc";
-        return "添加成功！bug修复！aaaa";
+        return "添加成功！bug修复！";
     }
 
     @RequestMapping("/deleteUser")
     public String deleteUser(){
-        return "删除成功！aaaa";
+        return "删除成功！";
     }
 }
