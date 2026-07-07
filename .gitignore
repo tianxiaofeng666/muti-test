@@ -1,0 +1,13 @@
+# WorkBuddy 工作区记忆
+.workbuddy/
+
+# Maven
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# 日志
+*.log

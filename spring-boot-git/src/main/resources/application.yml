@@ -1,2 +1,22 @@
 server:
   port: 1212
+
+spring:
+  servlet:
+    multipart:
+      # 单个文件大小上限
+      max-file-size: 100MB
+      # 整个请求大小上限
+      max-request-size: 100MB
+
+# S3 协议对象存储配置（兼容 AWS S3 / MinIO 等）
+s3:
+  endpoint: http://localhost:9000
+  region: us-east-1
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket: my-bucket
+  # pathStyleAccess 适用于 MinIO，AWS S3 可设为 false
+  path-style-access: true
+  # 允许上传的文件扩展名（逗号分隔，不区分大小写）
+  allowed-extensions: jpg,jpeg,png,gif,bmp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,zip,rar,7z
