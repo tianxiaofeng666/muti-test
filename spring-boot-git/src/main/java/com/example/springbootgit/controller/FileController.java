@@ -1,6 +1,7 @@
 package com.example.springbootgit.controller;
 
 import com.example.springbootgit.service.S3Service;
+import com.example.springbootgit.utils.FileTypeValidateUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
@@ -31,13 +33,16 @@ public class FileController {
     /**
      * 文件上传接口。
      * 请求方式：POST multipart/form-data
-     * 参数：file
+     * 参数：file（表单字段名）
      * 示例：curl -F "file=@test.png" http://localhost:1212/file/upload
+     * <p>
+     * 文件获取与格式校验统一由 {@link FileTypeValidateUtil#getAndValidateFile} 完成。
      */
     @PostMapping("/upload")
-    public ResponseEntity<Map<String, Object>> upload(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Map<String, Object>> upload(HttpServletRequest request) {
         Map<String, Object> body = new HashMap<>();
         try {
+            MultipartFile file = FileTypeValidateUtil.getAndValidateFile(request);
             Map<String, String> result = s3Service.upload(file);
             body.put("code", 0);
             body.put("msg", "上传成功");

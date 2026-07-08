@@ -11,12 +11,10 @@ spring:
 
 # S3 协议对象存储配置（兼容 AWS S3 / MinIO 等）
 s3:
-  endpoint: http://localhost:9000
+  endpoint: https://obs-sh.cucloud.cn
   region: us-east-1
-  access-key: minioadmin
-  secret-key: minioadmin
-  bucket: my-bucket
+  access-key: F2AF9AAF1D274E61B3451313274A703B2617
+  secret-key: 3211C7D6785F4A69A117A0FB05F8E22D5123
+  bucket: xt0156
   # pathStyleAccess 适用于 MinIO，AWS S3 可设为 false
   path-style-access: true
-  # 允许上传的文件扩展名（逗号分隔，不区分大小写）
-  allowed-extensions: jpg,jpeg,png,gif,bmp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,zip,rar,7z
