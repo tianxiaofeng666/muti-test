@@ -1,7 +1,10 @@
 package com.example.springbootgit.service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -11,8 +14,9 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -91,31 +95,65 @@ public class S3Service {
     }
 
     /**
-     * 下载文件，返回输入流与响应元信息。
+     * 下载文件，将 S3 对象流直接写入 HttpServletResponse，浏览器直接触发下载。
+     * <p>
+     * 拉取对象失败（如 objectKey 不存在）时，响应尚未提交，返回 404 JSON 错误信息。
      *
      * @param objectKey S3 上的对象 key
+     * @param response  HTTP 响应
      */
-    public DownloadResult download(String objectKey) {
-        GetObjectRequest getRequest = GetObjectRequest.builder()
-                .bucket(bucket)
-                .key(objectKey)
-                .build();
-
-        ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getRequest);
-        GetObjectResponse objectResponse = response.response();
-        String contentType = objectResponse.contentType() != null
-                ? objectResponse.contentType() : "application/octet-stream";
-        long contentLength = objectResponse.contentLength() != null
-                ? objectResponse.contentLength() : -1L;
-
-        // 从元信息或 key 中推导文件名
-        String filename = objectResponse.metadata() != null
-                ? objectResponse.metadata().get("original-filename") : null;
-        if (filename == null || filename.isEmpty()) {
-            filename = objectKey.contains("/") ? objectKey.substring(objectKey.lastIndexOf('/') + 1) : objectKey;
+    public void download(String objectKey, HttpServletResponse response) throws IOException {
+        ResponseInputStream<GetObjectResponse> s3Stream;
+        try {
+            GetObjectRequest getRequest = GetObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(objectKey)
+                    .build();
+            s3Stream = s3Client.getObject(getRequest);
+        } catch (Exception e) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getWriter().write("{\"code\":404,\"msg\":\"文件不存在或下载失败: "
+                    + e.getMessage() + "\"}");
+            return;
         }
 
-        return new DownloadResult(response, contentType, contentLength, filename);
+        try (ResponseInputStream<GetObjectResponse> is = s3Stream) {
+            GetObjectResponse objectResponse = is.response();
+
+            String contentType = objectResponse.contentType() != null
+                    ? objectResponse.contentType() : "application/octet-stream";
+            long contentLength = objectResponse.contentLength() != null
+                    ? objectResponse.contentLength() : -1L;
+
+            // 从元信息或 key 推导文件名
+            String filename = (objectResponse.metadata() != null)
+                    ? objectResponse.metadata().get("original-filename") : null;
+            if (filename == null || filename.isEmpty()) {
+                filename = objectKey.contains("/")
+                        ? objectKey.substring(objectKey.lastIndexOf('/') + 1) : objectKey;
+            }
+
+            // 中文文件名编码，兼容主流浏览器
+            String encodedFilename;
+            try {
+                encodedFilename = URLEncoder.encode(filename, "UTF-8").replaceAll("\\+", "%20");
+            } catch (Exception e) {
+                encodedFilename = filename;
+            }
+
+            // 设置响应头，浏览器识别为下载行为
+            response.setContentType(contentType);
+            if (contentLength > 0) {
+                response.setContentLengthLong(contentLength);
+            }
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment; filename=\"" + encodedFilename + "\"; filename*=UTF-8''" + encodedFilename);
+
+            // 将 S3 输入流直接写到响应输出流
+            StreamUtils.copy(is, response.getOutputStream());
+            response.getOutputStream().flush();
+        }
     }
 
     /**
@@ -214,38 +252,5 @@ public class S3Service {
             return Arrays.asList("jpg", "jpeg").contains(extension);
         }
         return detectedType.equals(extension);
-    }
-
-    /**
-     * 下载结果封装。
-     */
-    public static class DownloadResult {
-        private final InputStream inputStream;
-        private final String contentType;
-        private final long contentLength;
-        private final String filename;
-
-        public DownloadResult(InputStream inputStream, String contentType, long contentLength, String filename) {
-            this.inputStream = inputStream;
-            this.contentType = contentType;
-            this.contentLength = contentLength;
-            this.filename = filename;
-        }
-
-        public InputStream getInputStream() {
-            return inputStream;
-        }
-
-        public String getContentType() {
-            return contentType;
-        }
-
-        public long getContentLength() {
-            return contentLength;
-        }
-
-        public String getFilename() {
-            return filename;
-        }
     }
 }
