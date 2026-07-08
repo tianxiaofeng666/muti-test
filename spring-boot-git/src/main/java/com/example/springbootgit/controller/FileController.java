@@ -1,10 +1,10 @@
 package com.example.springbootgit.controller;
 
 import com.example.springbootgit.service.S3Service;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,31 +60,47 @@ public class FileController {
     }
 
     /**
-     * 文件下载接口。
+     * 文件下载接口，直接将文件流写到浏览器触发下载，无返回值。
      * 请求方式：GET
      * 参数：objectKey
-     * 示例：curl -OJ "http://localhost:1212/file/download?objectKey=xxx.png"
+     * 示例：浏览器访问 http://localhost:1212/file/download?objectKey=xxx.png
      */
     @GetMapping("/download")
-    public ResponseEntity<InputStreamResource> download(@RequestParam("objectKey") String objectKey) {
-        S3Service.DownloadResult result = s3Service.download(objectKey);
+    public void download(@RequestParam("objectKey") String objectKey, HttpServletResponse response)
+            throws IOException {
+        S3Service.DownloadResult result;
+        try {
+            result = s3Service.download(objectKey);
+        } catch (Exception e) {
+            // 拉取对象失败（如 objectKey 不存在），此时响应尚未提交，直接返回错误
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getWriter().write("{\"code\":404,\"msg\":\"文件不存在或下载失败: "
+                    + e.getMessage() + "\"}");
+            return;
+        }
+
+        // 处理中文文件名，兼容主流浏览器
         String encodedFilename;
         try {
             encodedFilename = URLEncoder.encode(result.getFilename(), "UTF-8").replaceAll("\\+", "%20");
         } catch (Exception e) {
             encodedFilename = result.getFilename();
         }
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType(result.getContentType()));
+
+        // 设置响应头，浏览器识别为下载行为
+        response.setContentType(result.getContentType());
         if (result.getContentLength() > 0) {
-            headers.setContentLength(result.getContentLength());
+            response.setContentLengthLong(result.getContentLength());
         }
-        headers.set(HttpHeaders.CONTENT_DISPOSITION,
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION,
                 "attachment; filename=\"" + encodedFilename + "\"; filename*=UTF-8''" + encodedFilename);
 
-        return ResponseEntity.ok()
-                .headers(headers)
-                .body(new InputStreamResource(result.getInputStream()));
+        // 将 S3 输入流直接写到响应输出流
+        try (InputStream is = result.getInputStream()) {
+            StreamUtils.copy(is, response.getOutputStream());
+            response.getOutputStream().flush();
+        }
     }
 
     /**
